@@ -113,7 +113,7 @@ begin
   end;
   s1:=sqrt(s1/n1);//1st standard deviation
   s2:=sqrt(s2/n1);//2nd standard deviation
-  for i:=0 to 366 do begin //ðàñ÷åò àâòîêîðð.ô-èè
+  for i:=0 to 366 do begin
     r[i]:=0;
     for j:=1 to (n1-i) do r[i]:=r[i]+(data1[j+i]-m1)*(data2[j]-m2);
     r[i]:=r[i]/((n1-i)*s1*s2);
