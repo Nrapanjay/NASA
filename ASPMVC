@@ -17,6 +17,32 @@ namespace Sofa.Controllers
 
         public ActionResult Index()
         {
+            //Array ACF's loading
+            GV.s2 = Server.MapPath("~/App_Data/CF.txt");
+            GV.sw = System.IO.File.OpenText(GV.s2);
+            GV.s2 = GV.sw.ReadLine();
+            GV.cf = Convert.ToInt16(GV.s2);//number of cities in a list
+            for (GV.i1 = 0; GV.i1 <= (GV.cf - 1); GV.i1++)
+            {
+                GV.acf[GV.i1, 0] = GV.sw.ReadLine();//city's name
+                GV.acf[GV.i1, 1] = GV.sw.ReadLine();//1st argument
+                GV.acf[GV.i1, 2] = GV.sw.ReadLine();//1st argument's delay
+                GV.acf[GV.i1, 3] = GV.sw.ReadLine();//2nd argument
+                GV.acf[GV.i1, 4] = GV.sw.ReadLine();//2nd argument's delay
+                GV.acf[GV.i1, 5] = GV.sw.ReadLine();//3rd argument
+                GV.acf[GV.i1, 6] = GV.sw.ReadLine();//3rd argument's delay
+                GV.acf[GV.i1, 7] = GV.sw.ReadLine();//maximum date
+                GV.acf[GV.i1, 8] = GV.sw.ReadLine();//k0
+                GV.acf[GV.i1, 9] = GV.sw.ReadLine();//k1
+                GV.acf[GV.i1, 10] = GV.sw.ReadLine();//k2
+                GV.acf[GV.i1, 11] = GV.sw.ReadLine();//k3
+                GV.acf[GV.i1, 12] = GV.sw.ReadLine();//calculated average quality of the forecast
+            }
+            GV.sw.Close();
+            GV.sw.Dispose();
+
+            this.CreateInitialXmlDataFile();
+
             return View();
         }
 
@@ -37,6 +63,7 @@ namespace Sofa.Controllers
             string tempMonth = tempFinalDateString.Substring(4, 2);
             string tempDay = tempFinalDateString.Substring(6, 2);
 
+            tempFinalDateString = tempYear + "/" + tempMonth + "/" + tempDay;
             dates.Add(tempFinalDateString);
             DateTime finalDate = new DateTime(int.Parse(tempYear), int.Parse(tempMonth), int.Parse(tempDay));
             while (finalDate.Date != DateTime.Now.Date)
@@ -47,7 +74,7 @@ namespace Sofa.Controllers
                 tempMonth = finalDate.Month < 10 ? "0" + finalDate.Month : finalDate.Month.ToString();
                 tempDay = finalDate.Day < 10 ? "0" + finalDate.Day : finalDate.Day.ToString();
 
-                string currentDayString = tempYear + tempMonth + tempDay;
+                string currentDayString = tempYear + "/" + tempMonth + "/" + tempDay;
                 dates.Add(currentDayString);
             }
 
@@ -55,29 +82,14 @@ namespace Sofa.Controllers
             return Json(dates, JsonRequestBehavior.AllowGet);
         }
 
-        public JsonResult GetFinalDates(int selectedPlace)
+        public JsonResult GetFinalDate(int selectedPlace)
         {
-            List<string> dates = new List<string>();
             string tempFinalDateString = GV.acf[selectedPlace, 7];
             string tempYear = tempFinalDateString.Substring(0, 4);
             string tempMonth = tempFinalDateString.Substring(4, 2);
             string tempDay = tempFinalDateString.Substring(6, 2);
-
-            dates.Add(tempFinalDateString);
-            DateTime finalDate = new DateTime(int.Parse(tempYear), int.Parse(tempMonth), int.Parse(tempDay));
-            while (finalDate.Date != DateTime.Now.Date)
-            {
-                finalDate = finalDate.Date.Subtract(TimeSpan.FromDays(1));
-
-                tempYear = finalDate.Year.ToString();
-                tempMonth = finalDate.Month < 10 ? "0" + finalDate.Month : finalDate.Month.ToString();
-                tempDay = finalDate.Day < 10 ? "0" + finalDate.Day : finalDate.Day.ToString();
-
-                string currentDayString = tempYear + tempMonth + tempDay;
-                dates.Add(currentDayString);
-            }
-
-            return Json(dates, JsonRequestBehavior.AllowGet);
+            tempFinalDateString = tempYear + "/" + tempMonth + "/" + tempDay;
+            return Json(tempFinalDateString, JsonRequestBehavior.AllowGet);
         }
 
         public void CreateInitialXmlDataFile()
@@ -110,7 +122,7 @@ namespace Sofa.Controllers
                     GV.s2 = Server.MapPath("~/App_Data/TemperatureFiles/f" + GV.acf[GV.si, 5] + ".txt");
                     GV.f3f = System.IO.File.OpenText(GV.s2);
                     //LOAD DATES
-                    //????????????? ????????? ???? ????????????? ????????
+                    //Инициалазация начальной даты долгосрочного прогноза
                     GV.s1 = Convert.ToString(DateTime.Now.Year);
                     if (DateTime.Now.Month < 10) GV.s1 = GV.s1 + '0';
                     GV.s1 = GV.s1 + DateTime.Now.Month;
@@ -190,7 +202,7 @@ namespace Sofa.Controllers
                     GV.s2 = Server.MapPath("~/App_Data/TemperatureFiles/f" + GV.acf[GV.si, 5] + ".txt");
                     GV.f3f = System.IO.File.OpenText(GV.s2);
                     //LOAD DATES
-                    //????????????? ????????? ???? ????????????? ????????
+                    //Инициалазация начальной даты долгосрочного прогноза
                     GV.s1 = Convert.ToString(DateTime.Now.Year);
                     if (DateTime.Now.Month < 10) GV.s1 = GV.s1 + '0';
                     GV.s1 = GV.s1 + DateTime.Now.Month;
@@ -241,6 +253,11 @@ namespace Sofa.Controllers
 
         public void CreateXmlDataFileAfterSelectingDates(int selectedPlace, string initialDate, string finalDate)
         {
+            if(initialDate != null)
+                initialDate = initialDate.Replace("/", "");
+            if (finalDate != null)
+                finalDate = finalDate.Replace("/", "");
+
             StreamWriter swf;
             GV.si = selectedPlace;
             GV.d1 = Convert.ToInt16(GV.acf[GV.si, 2]);//1st argument's delay
@@ -270,7 +287,7 @@ namespace Sofa.Controllers
                     GV.s2 = Server.MapPath("~/App_Data/TemperatureFiles/f" + GV.acf[GV.si, 5] + ".txt");
                     GV.f3f = System.IO.File.OpenText(GV.s2);
                     //LOAD DATES
-                    //?????????? ????????? ? ???????? ??? ????????????? ????????
+                    //Считывание начальной и конечной дат долгосрочного прогноза
                     GV.s1 = initialDate;//date of the begin
                     GV.s4 = finalDate;//date of the end
                     GV.sw = System.IO.File.OpenText(Server.MapPath("~/App_Data/date.txt"));
@@ -337,36 +354,6 @@ namespace Sofa.Controllers
         #endregion
 
         #region city correlations page methods
-
-        public ViewResult WeatherForecast()
-        {
-            //Array ACF's loading
-            GV.s2 = Server.MapPath("~/App_Data/CF.txt");
-            GV.sw = System.IO.File.OpenText(GV.s2);
-            GV.s2 = GV.sw.ReadLine();
-            GV.cf = Convert.ToInt16(GV.s2);//number of cities in a list
-            for (GV.i1 = 0; GV.i1 <= (GV.cf - 1); GV.i1++)
-            {
-                GV.acf[GV.i1, 0] = GV.sw.ReadLine();//city's name
-                GV.acf[GV.i1, 1] = GV.sw.ReadLine();//1st argument
-                GV.acf[GV.i1, 2] = GV.sw.ReadLine();//1st argument's delay
-                GV.acf[GV.i1, 3] = GV.sw.ReadLine();//2nd argument
-                GV.acf[GV.i1, 4] = GV.sw.ReadLine();//2nd argument's delay
-                GV.acf[GV.i1, 5] = GV.sw.ReadLine();//3rd argument
-                GV.acf[GV.i1, 6] = GV.sw.ReadLine();//3rd argument's delay
-                GV.acf[GV.i1, 7] = GV.sw.ReadLine();//maximum date
-                GV.acf[GV.i1, 8] = GV.sw.ReadLine();//k0
-                GV.acf[GV.i1, 9] = GV.sw.ReadLine();//k1
-                GV.acf[GV.i1, 10] = GV.sw.ReadLine();//k2
-                GV.acf[GV.i1, 11] = GV.sw.ReadLine();//k3
-                GV.acf[GV.i1, 12] = GV.sw.ReadLine();//calculated average quality of the forecast
-            }
-            GV.sw.Close();
-            GV.sw.Dispose();
-
-            this.CreateInitialXmlDataFile();
-            return View();
-        }
 
         public JsonResult GetCityData(string city)
         {
